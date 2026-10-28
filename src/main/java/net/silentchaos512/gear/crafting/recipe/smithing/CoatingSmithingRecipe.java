@@ -32,16 +32,14 @@ public class CoatingSmithingRecipe extends GearSmithingRecipe {
         if (material != null) {
             GearType gearType = GearHelper.getType(stackToModify);
             if (gearType.isGear()) {
-                ItemStack result = stackToModify.copy();
-
                 PartTypes.COATING.get().getCompoundPartItem(gearType).ifPresent(cpi -> {
                     ItemStack partItem = cpi.create(material, 1);
                     // Unfortunately this deletes the old part; can't get a player here
-                    GearData.addOrReplacePart(result, Objects.requireNonNull(PartInstance.from(partItem)));
+                    GearData.addOrReplacePart(stackToModify, Objects.requireNonNull(PartInstance.from(partItem)));
                 });
 
-                result.setDamageValue(0);
-                GearData.recalculateGearData(result, CommonHooks.getCraftingPlayer()); // Crafting player is always null?
+                stackToModify.setDamageValue(0);
+                GearData.recalculateGearData(stackToModify, CommonHooks.getCraftingPlayer()); // Crafting player is always null?
             }
         }
     }
