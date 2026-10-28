@@ -33,7 +33,16 @@ public abstract class GearSmithingRecipe implements SmithingRecipe {
     @Override
     public boolean matches(SmithingRecipeInput input, Level level) {
         boolean isGearItem = input.base().getItem() instanceof GearItem;
-        return isGearItem && SmithingRecipe.super.matches(input, level);
+        return isGearItem && SmithingRecipe.super.matches(input, level) && this.canApplyTo(input);
+    }
+
+    /**
+     * Extra applicability check for no-op protection: a recipe whose operation would change nothing
+     * (duplicate upgrade part, missing coat target, ...) must not match, so the smithing table
+     * cannot consume the ingredients for an unchanged result.
+     */
+    protected boolean canApplyTo(SmithingRecipeInput input) {
+        return true;
     }
 
     @Override
@@ -41,11 +50,15 @@ public abstract class GearSmithingRecipe implements SmithingRecipe {
         ItemStack result = input.base().copy();
         result.setCount(1); // Ensure arrows or other stackable items are not duplicated
         ItemStack upgradeItem = input.addition();
-        applyUpgrade(result, upgradeItem);
-        return result;
+        return applyUpgrade(result, upgradeItem) ? result : ItemStack.EMPTY;
     }
 
-    protected abstract void applyUpgrade(ItemStack stackToModify, ItemStack upgradeItem);
+    /**
+     * @return true when the modification was actually applied; false means the input was rejected
+     *         and {@link #assemble} must report an empty result instead of silently eating the
+     *         ingredients.
+     */
+    protected abstract boolean applyUpgrade(ItemStack stackToModify, ItemStack upgradeItem);
 
     @Override
     public Optional<Ingredient> templateIngredient() {

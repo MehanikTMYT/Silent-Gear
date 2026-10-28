@@ -3,6 +3,7 @@ package net.silentchaos512.gear.crafting.recipe.smithing;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.silentchaos512.gear.api.item.GearType;
 import net.silentchaos512.gear.gear.material.MaterialInstance;
@@ -23,25 +24,35 @@ public class CoatingSmithingRecipe extends GearSmithingRecipe {
     }
 
     @Override
-    protected void applyUpgrade(ItemStack stackToModify, ItemStack upgradeItem) {
+    protected boolean canApplyTo(SmithingRecipeInput input) {
+        // Re-coating (replacing an existing coating) is legitimate; only a missing coat target
+        // is a no-op that must not consume ingredients.
+        return GearData.getPartOfType(input.base(), PartTypes.MAIN.get()) != null;
+    }
+
+    @Override
+    protected boolean applyUpgrade(ItemStack stackToModify, ItemStack upgradeItem) {
         if (GearData.getPartOfType(stackToModify, PartTypes.MAIN.get()) == null) {
-            return;
+            return false;
         }
 
         MaterialInstance material = MaterialInstance.from(upgradeItem);
-        if (material != null) {
-            GearType gearType = GearHelper.getType(stackToModify);
-            if (gearType.isGear()) {
-                PartTypes.COATING.get().getCompoundPartItem(gearType).ifPresent(cpi -> {
-                    ItemStack partItem = cpi.create(material, 1);
-                    // Unfortunately this deletes the old part; can't get a player here
-                    GearData.addOrReplacePart(stackToModify, Objects.requireNonNull(PartInstance.from(partItem)));
-                });
-
-                stackToModify.setDamageValue(0);
-                GearData.recalculateGearData(stackToModify, CommonHooks.getCraftingPlayer()); // Crafting player is always null?
-            }
+        if (material == null) {
+            return false;
         }
+        GearType gearType = GearHelper.getType(stackToModify);
+        if (gearType.isGear()) {
+            PartTypes.COATING.get().getCompoundPartItem(gearType).ifPresent(cpi -> {
+                ItemStack partItem = cpi.create(material, 1);
+                // Unfortunately this deletes the old part; can't get a player here
+                GearData.addOrReplacePart(stackToModify, Objects.requireNonNull(PartInstance.from(partItem)));
+            });
+
+            stackToModify.setDamageValue(0);
+            GearData.recalculateGearData(stackToModify, CommonHooks.getCraftingPlayer()); // Crafting player is always null?
+            return true;
+        }
+        return false;
     }
 
     @Override
