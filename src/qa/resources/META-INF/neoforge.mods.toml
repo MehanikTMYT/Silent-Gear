@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="sgqa"
+version="1"
+displayName="Silent Gear upgrade regression probe"
+[[dependencies.sgqa]]
+modId="silentgear"
+type="required"
+versionRange="[4,)"
+ordering="AFTER"
+side="SERVER"

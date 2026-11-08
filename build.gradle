@@ -68,6 +68,15 @@ tasks.shadowJar {
 }
 assemble.dependsOn shadowJar
 
+// Opt-in dedicated-server regression probe, excluded from release/shadow artifacts.
+// Must be declared before the runs block: runs DSL resolves modSource eagerly.
+sourceSets {
+    qa {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
 runs {
     // applies to all the run configs below
     configureEach {
@@ -185,13 +194,7 @@ dependencies {
     }
 
     // JEI (fleet: replaced by the EMI plugin, compat/emi; JEI plugin kept in src/disabled)
-    if (project.hasProperty("jei_version")) {
-        // compile against the JEI API but do not include it at runtime
-        compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-        compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
-        // at runtime, use the full JEI jar for NeoForge
-        localRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
-    }
+// синк/порт 26.1.2: JEI-зависимость удалена — политика EMI-only
 
     // EMI
     if (project.hasProperty("emi_version")) {
@@ -285,4 +288,8 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+tasks.register('qaJar', Jar) {
+    archiveClassifier = 'qa'
+    from sourceSets.qa.output
 }
